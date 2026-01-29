@@ -1,6 +1,6 @@
 # SubsTracker - 订阅管理与提醒系统
 
-基于Cloudflare Workers的轻量级订阅管理系统，帮助您轻松跟踪各类订阅服务的到期时间，并通过Telegram,企业微信等发送及时提醒。
+基于Cloudflare Workers的轻量级订阅管理系统，帮助您轻松跟踪各类订阅服务的到期时间，并通过 Telegram、Webhook 等多渠道发送及时提醒。
 
 ![image](https://github.com/user-attachments/assets/22ff1592-7836-4f73-aa13-24e9d43d7064)
 
@@ -11,13 +11,17 @@
 - **智能提醒**：自定义提前提醒天数，自动续订计算
 - **农历显示**：支持农历日期显示，可控制开关
 - **状态管理**：订阅启用/停用，过期状态自动识别
+- **财务追踪**：记录订阅费用，完整的支付历史和统计分析
+- **手动续订**：灵活的续订管理，支持自定义金额、周期和备注
+- **仪表盘**：可视化展示月度/年度支出，支出趋势和分类统计
 
 ### 📱 多渠道通知
 - **Telegram**：支持 Telegram Bot 通知
 - **NotifyX**：集成 NotifyX 推送服务
-- **企业微信应用通知**：支持企业微信应用推送
+- **Webhook 通知**：支持自定义 Webhook 推送
 - **企业微信机器人**：支持企业微信群机器人通知
 - **邮件通知**：基于 Resend 的专业邮件服务
+- **Bark**：支持 iOS Bark 推送
 - **自定义 Webhook**：支持自定义请求格式和模板
 
 ### 🌙 农历功能
@@ -30,6 +34,31 @@
 - **备注优化**：长备注自动截断，悬停显示完整内容
 - **实时预览**：日期选择时实时显示对应农历
 - **用户偏好**：记住用户的显示偏好设置
+- **外观风格**：支持浅色模式、深色模式、跟随系统三种风格
+
+### 💰 财务管理（新增）
+- **订阅金额追踪**：记录每个订阅的费用，支持多币种
+- **汇率换算**：支持动态汇率、固定汇率两种模式
+- **智能仪表盘**：
+  - 📊 月度/年度支出统计，环比趋势分析
+  - 💳 活跃订阅数量，月均支出计算
+  - 📅 最近7天支付记录，即将续费提醒
+  - 📈 按类型/分类的支出排行和占比
+- **支付历史管理**：
+  - 📝 完整的支付记录，支持编辑/删除
+  - 🕒 精确显示计费周期（如：2025年1月15日 - 2025年2月15日）
+  - 📊 累计支出和支付次数统计
+  - 🔄 删除支付记录时自动回退订阅周期
+- **高级续订功能**：
+  - 💵 自定义续订金额（适应价格变动）
+  - 📅 选择续订日期（支持回溯记录）
+  - 🔢 批量续订多个周期（如一次续订12个月）
+  - 📝 添加续订备注（记录优惠活动等）
+  - 👁️ 实时预览新的到期日期
+- **数据洞察**：
+  - 自动计算月均支出和年度总支出
+  - 支出趋势对比（月度环比）
+  - 智能分类统计，了解各类服务占比
 
 ## 🚀 一键部署
 
@@ -66,18 +95,35 @@ Fork仓库,然后点击自己仓库里的部署按钮，等待部署完成,**注
 ### NotifyX
 - **API Key**: 从 [NotifyX官网](https://www.notifyx.cn/) 获取
 
-### 邮件通知 (Resend)
-- **API Key**: 从 [Resend官方教程](https://developers.cloudflare.com/workers/tutorials/send-emails-with-resend/) 获取
-- **发件人邮箱**: 必须是已在Resend验证的域名邮箱
-- **收件人邮箱**: 接收通知的邮箱地址
-- 支持HTML格式的美观邮件模板
-
-### 企业微信应用通知
-- **推送 URL**: 从 [企业微信应用通知平台](https://push.996007.icu) 获取
-- 支持自定义请求头和消息模板
-
 ### 企业微信机器人
 - **推送 URL**: 参考[官方文档](https://developer.work.weixin.qq.com/document/path/91770)获取
+
+### Webhook 通知
+- **推送 URL**: 根据所使用的 Webhook 服务或自建接口填写，例如 `https://your-service.com/hooks/notify`
+- 支持自定义请求方法、请求头与消息模板
+- **模板占位符**：`{{title}}`、`{{content}}`、`{{tags}}`（多行形式）、`{{tagsLine}}`、`{{timestamp}}`、`{{formattedMessage}}`
+
+### Bark（iOS 推送）
+- **服务器地址**：默认 `https://api.day.app`，也可使用自建服务器
+- **设备 Key**：在 Bark App 内复制
+- **历史记录**：勾选“保存推送”后可保留推送历史
+
+### 邮件通知 (Resend)
+- **API Key**: 从 [Resend 官方教程](https://developers.cloudflare.com/workers/tutorials/send-emails-with-resend/) 获取
+- **发件人邮箱**: 必须是已在 Resend 验证的域名邮箱
+- **收件人邮箱**: 接收通知的邮箱地址
+- 支持 HTML 格式的美观邮件模板
+
+### 🔔 通知时间与时区说明
+- Cloudflare Workers 的 Cron 表达式使用 **UTC 时区**，例如 `0 8 * * *` 表示 UTC 08:00 触发
+- 若希望在北京时间（UTC+8）早上 8 点提醒，可将 Cron 设置为 `0 0 * * *`
+- 若需要小时级提醒，可将 Cron 调整为 `0 * * * *`（每小时执行一次），并在系统配置中指定允许的通知小时
+- 系统配置中的 “系统时区” 用于计算订阅剩余时间和格式化展示，建议与提醒需求保持一致
+
+### 🔐 第三方 API 安全调用
+- 通过 `POST /api/notify/{token}` 可触发系统通知，请在后台配置“第三方 API 访问令牌”
+- 令牌也可通过 `Authorization: Bearer <token>` 或 `?token=<token>` 传入
+- 未配置或令牌不匹配时接口会直接拒绝请求，建议定期更换随机令牌
 
 
 > 💡 **提示**: 系统默认每天早上8点自动检查即将到期的订阅
@@ -130,9 +176,11 @@ Fork仓库,然后点击自己仓库里的部署按钮，等待部署完成,**注
 
 
 ## 赞助
-本项目的 CDN 加速和安全保护由腾讯 EdgeOne 赞助。
-[Best Asian CDN, Edge, and Secure Solutions - Tencent EdgeOne](https://edgeone.ai/?from=github)
-![image](https://edgeone.ai/media/34fe3a45-492d-4ea4-ae5d-ea1087ca7b4b.png)
+本项目 CDN 加速及安全防护由 Tencent EdgeOne 赞助：EdgeOne 提供长期有效的免费套餐，包含不限量的流量和请求，覆盖中国大陆节点，且无任何超额收费，感兴趣的朋友可以点击下面的链接领取
+
+[[Best Asian CDN, Edge, and Secure Solutions - Tencent EdgeOne](https://edgeone.ai/?from=github)]
+
+[![image](https://edgeone.ai/media/34fe3a45-492d-4ea4-ae5d-ea1087ca7b4b.png)](https://edgeone.ai/media/34fe3a45-492d-4ea4-ae5d-ea1087ca7b4b.png)
 
 ## 🤝 贡献
 
@@ -145,4 +193,3 @@ MIT License
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=wangwangit/SubsTracker&type=Date)](https://www.star-history.com/#wangwangit/SubsTracker&Date)
-
